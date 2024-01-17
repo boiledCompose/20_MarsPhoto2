@@ -58,6 +58,7 @@
 <br>
 
 `ViewModel`에서 네트워크 요청을 직접 실행하던 구조에서 저장소를 통해 데이터를 제공받는 구조로 바뀌었다.
+
 <img src = "https://developer.android.com/static/codelabs/basic-android-kotlin-compose-add-repository/img/f7f372187c75f57f_856.png?hl=ko" width=600px, height=150px/>
 
 이 접근 방식은 데이터를 가져오는 코드와 `ViewModel`이 느슨하게 결합되도록 만든다. **느슨하게 결합**되면 저장소에서만 `getMarsPhotos()` 메서드를 관리하여 다른 항목에 부정적인 
