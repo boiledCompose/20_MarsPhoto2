@@ -129,6 +129,22 @@
 
 <img src="https://developer.android.com/static/codelabs/basic-android-kotlin-compose-add-repository/img/8a410896a22ad569_856.png?hl=ko" width=600, heigth=400/>
 
-
-
+1. 패키지의 최상단에 `Application`을 상속받는 클래스를 생성한다.
+2. 클래스 내부에 `AppContainer` 변수를 선언하고 `onCreate()`에서 `DefaultAppContainer`로 초기화한다.
+   ```kotlin
+   class MarsPhotosApplication : Application() {
+      lateinit var container: AppContainer
+      override fun onCreate() {
+         super.onCreate()
+         container = DefaultAppContainer()
+      }
+   }
+   ```
+3. `manifests/AndroidManifest.xml` 파일의 `<application>`태그에 다음 코드를 추가한다.
+   ```xml
+   <application
+      android:name=".MarsPhotosApplication"
+      ...
+   </application>
+   ```
 
