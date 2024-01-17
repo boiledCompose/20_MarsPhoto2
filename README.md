@@ -63,6 +63,8 @@
 이 접근 방식은 데이터를 가져오는 코드와 `ViewModel`이 느슨하게 결합되도록 만든다. **느슨하게 결합**되면 저장소에서만 `getMarsPhotos()` 메서드를 관리하여 다른 항목에 부정적인 
 영향을 미치지 않고 `ViewModel` 또는 저장소를 변경할 수 있다.
 
+<br>
+
 ## 종속 항목 삽입 (Dependency Injection)
 
 클래스에서 다른 클래스가 필요한 경우 필요한 클래스를 **종속 항목**이라고 한다. 종속 항목을 포함하는 방법은 크게 두 가지다:
@@ -73,9 +75,59 @@
 클래스가 필요한 객체를 인스턴스화하여 사용하는 방법은 구현하기 쉽지만, 클래스와 종속 항목 간의 긴밀한 결합으로 인해 코드가 유연하지 않고 테스트하기 더 어려워진다. 객체의 생성자도 호출하고,
 생성자가 변경되면 호출 코드도 변경해야 하기 때문이다. 
 
-종속되는 객체를 클래스 외부에서 인스턴스화한 후 인수로 전달하는 방식으로 코드의 유연성과 접근성을 높일 수 있다. 클래스가 더 이상 하나의 특정 객체에 하드코딩되지 않고, 호출 코드를 수정할 필요
- 없이 필요한 객체의 구현을 변경할 수 있다.
+종속되는 객체를 클래스 외부에서 인스턴스화한 후 인수로 전달하는 방식으로 코드의 유연성과 접근성을 높일 수 있다. 클래스가 더 이상 하나의 특정 객체에 하드코딩되지 않고, 호출 코드를 수정할 필요 없이 필요한 객체의 구현을 변경할 수 있다. 이렇게 객체를 전달하는 것을 ***종속 항목 삽입***이라고 한다. 간단히 말해 종속 항목이 호출 클래스에 하드코딩되는 대신 런타임에 제공되는 경우인 것이다.
 
+종속 항목 삽입의 장점은 다음과 같다:
+- **코드 재사용성 지원:** 코드가 특정 객체에 종속되지 않아 유연성이 높다.
+- **리팩터링 편의서 향상:** 코드가 느슨하게 연결되여 코드의 한 섹션을 수정해도 다른 섹션에 영향이 없다.
+- **테스트 지원:** 테스트 중에 테스트 객체 전달이 가능하다.
+<br>
+
+## Application Container 만들기
+
+컨테이너는 앱에 필요한 종속 항목이 포함된 객체다. 종속 항목들은 전체 애플리케이션에 걸쳐 사용되므로 모든 활동에서 사용할 수 있는 일반적인 위치에 배치해야 한다.
+
+1. `data` 패키지 내에 `AppContainer` 인터페이스를 생성하고 다음과 같이 작성한다.
+   ```kotlin
+   interface AppContainer {
+         val marsPhotosRepository: MarsPhotosRepository
+   }
+   ```
+2. `AppContainer`를 구현하는 `DefaultAppContainer` 클래스를 생성한다. 여기엔 앱 전체에 걸쳐 사용되는 종속 항목들을 배치한다.
+   ```kotlin
+   class DefaultAppContainer : AppContainer {
+
+      private val baseUrl = https://android-kotlin-fun-mars-server.appspot.com"
+
+      private val retrofit: Retrofit = Retrofit.Builder()
+           .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
+           .baseUrl(BASE_URL)
+           .build()
+
+      private val retrofitService: MarsApiService by lazy {
+         retrofit.create(MarsApiService::class.java)
+      }
+   }
+   ```
+3. 클래스 내부에 추상 메서드를 구현한다. `retrofitService`를 사용하는 저장소를 반환하도록 한다.
+   ```
+   override val marsPhotosRepository: MarsPhotosRepository by lazy {
+         NetworkMarsPhotosRepository(retrofitService)
+   }
+   ```
+4. `NetworkMarsPhotoRepository` 객체가 `MarsApiService` 객체를 인수로 받도록 수정한다. 이를 통해 기존 싱글톤 객체 `MarsApi`가 사용되지 않게 된다.
+   ```
+   class NetworkMarsPhotosRepository(
+       private val marsApiService: MarsApiService
+   ) : MarsPhotosRepository {
+         override suspend fun getMarsPhotos(): List<MarsPhoto> = marsApiService.getPhotos()
+   }
+   ```
+<br>
+
+## 앱과 Application Container 연결
+
+<img src="https://developer.android.com/static/codelabs/basic-android-kotlin-compose-add-repository/img/8a410896a22ad569_856.png?hl=ko" width=600, heigth=400/>
 
 
 
