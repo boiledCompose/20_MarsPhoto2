@@ -148,3 +148,42 @@
    </application>
    ```
 
+## ViewModel에 저장소 추가
+
+1. `MarsViewModel`클래스 매개변수로 `MarsPhotosRepository`를 추가한다. 이제 생성자 매개변수의 값을 애플리케이션 컨테이너에서 가져올 수 있다.
+   ```kotlin
+   class MarsViewModel(private val marsPhotosRepository: MarsPhotosRepository) : ViewModel()
+   ```
+2.  ViewModel 코드 내부에서 저장소 객체를 선언할 필요가 없으므로 코드 줄을 삭제한다.
+   ```
+   //remove
+   val marsPhotosRepository = NetworkMarsPhotosRepository()
+   ```
+3. 안드로이드에서 ViewModel을 사용할 때 생성자를 통한 데이터 전달이 기본적으로 제한되어 있으나, `ViewModelProvider.Factory`를 구현함으로써 이러한 제한을 우회할 수 있다. 이 객체는 애플리케이션 컨테이너를 사용하여 `marsPhotosRepository를 검색하고 `ViewModel` 객체가 생성되면 저장소를 `ViewModel`에 전달한다.
+   ```
+   companion object {
+      val Factory: ViewModelProvider.Factory = viewModelFactory {
+         initializer {
+            val application = (this[APPLICATION_KEY] as MarsPhotosApplication)
+            val marsPhotosRepository = application.container.marsPhotosRepository
+            MarsViewModel(marsPhotosRepository = marsPhotosRepository)
+         }
+      }
+   }
+   ```
+   - `APPLICATION_KEY`는 앱의 애플리케이션 객체를 찾는 데 사용된다.
+   - 어플리케이션 객체의 `container` 속성을 통해 종속 항목 삽입에 사용된 저장소를 검색할 수 있다.
+4. `ViewModel` 객체가 선언될 때 팩토리를 인수로 넘겨줍니다.
+   ```
+   /* theme/MarsPhotosApp.kt */
+   Surface(
+            // ...
+        ) {
+            val marsViewModel: MarsViewModel =
+   viewModel(factory = MarsViewModel.Factory)
+            // ...
+        }
+   ```
+
+>[!NOTE]
+> 여기까지가 저장소 및 종속 항목 삽입을 사용하도록 앱을 리팩터링한 코드다. 저장소 하나가 포함된 데이터 레이어를 구현하여 안드로이드 권장사항에 따라 UI와 데이터 소스 코드를 분리하였다.
