@@ -136,7 +136,22 @@ fun marsViewModel_getMarsPhotos_verifyMarsUiStateSuccess() =
    }
 ```
 >[!WARNING]
-> 
+> `MarsViewModel`이 저장소를 호출할 때 `viewModelScope.launch`를 통해 Main 디스패체 환경 밑에서 새로운 코루틴을 실행한다. 로컬 단위 테스트 아래의 코드가 Main 디스패처를 참조하는 경우 단위 테스트 실행 시 예외가 발생한다. 이 문제를 해결하려면 단위 테스트를 실행할 때 기본 디스패처를 명시적으로 정의해야 한다.
+<br>
+
+### 테스트 디스패처 만들기
+
+Main 디스패처는 UI에서만 사용할 수 있으므로 단위 테스트 친화적인 디스패처롤 바꿔야 한다. 이를 수행해주는 것이 `TestDispatcher`다.
+
+Main 디스패처를 `TestDispathcer`로 바꾸려면 `Dispartchers.setMain()` 함수를 사용하고, 반대로 돌아오려면 `Dispatchers.resetMain()`을 사용한다. 
+
+각 테스트에서 Main 디스패처를 대체하는 코드가 중복되지 않도록 JUnit 테스트 규칙을 추출할 수 있다. 이렇게 추출한 규칙이 TestRule이다. TestRule은 테스트가 실행되는 환경을 제어하는 방법을 제공하며, 검사 추가, 테스트에 필요한 설정 혹은 정리 실행, 테스트 실행 관찰 및 보고 등을 수행한다.
+
+1. 테스트 디렉토리에 `rules`라는 패키지를 생성한다.
+2. `rules`밑에 `TestDispatcherRule`이라는 클래스를 만든다. 이 클래스는 `TestWatcher`를 상속받는다.
+3. `TestDispatcher` 매개변수를 넣는다. 이 인수의 값 중 `UnconfinedTestDispatcher`는 태스크가 특정 순서로 실행되지 않도록 지정하고, `StandardTestDispatcher`는 코루틴을 완전히 제어한다.
+   
+
    
 
    
