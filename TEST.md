@@ -7,7 +7,7 @@
 ### 로컬 테스트 종속 항목 추가
 
 1. 앱 레벨의 `build.gradle.kts`에 다음 항목을 추가한다.
-   ```
+   ```gradle
    testImplementation("junit:junit:4.13.2")
    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1")
    ```
@@ -111,7 +111,7 @@ fun networkMarsPhotosRepository_getMarsPhotos_verifyPhotoList() =
 > 여기선 `MarsViewModel`에서 `getMarsPhotos()` 함수의 테스트를 작성한다.
 
 1. `MarsViewModel`은 `MarsPhotosRepository`에 종속되므로 모조 저장소 클래스인 `FakeNetworkMarsPhotosRepository`를 먼저 만들고 `getMarsPhotos()`를 재정의한다. 이 메서드는 모조 데이터들을 반환해야 한다.
-   ```
+   ```kotlin
    class FakeNetworkMarsPhotosRepository : MarsPhotosRepository{
       override suspend fun getMarsPhotos(): List<MarsPhoto> {
          return FakeDataSource.photosList
@@ -150,10 +150,46 @@ Main 디스패처를 `TestDispathcer`로 바꾸려면 `Dispartchers.setMain()` �
 1. 테스트 디렉토리에 `rules`라는 패키지를 생성한다.
 2. `rules`밑에 `TestDispatcherRule`이라는 클래스를 만든다. 이 클래스는 `TestWatcher`를 상속받는다.
 3. `TestDispatcher` 매개변수를 넣는다. 이 인수의 값 중 `UnconfinedTestDispatcher`는 태스크가 특정 순서로 실행되지 않도록 지정하고, `StandardTestDispatcher`는 코루틴을 완전히 제어한다.
-   
+   ```kotlin
+   class TestDispatcherRule(
+      val testDispatcher: TestDispatcher = UnconfinedTestDispatcher(),
+   ) : TestWatcher() {
+      
+   }
+   ```
+4. 테스트가 실행되기 전에 Main 디스패처를 테스트 디스패처로 바꿔야 한다. `TestWatcher` 클래스의 `starting()` 함수는 지정된 테스트가 실행되기 전에 실행된다. `starting()` 함수를 재정의하고 테스트 디스패처로 바꾼다.
+   ```kotlin
+   class TestDispatcherRule(
+      val testDispatcher: TestDispatcher = UnconfinedTestDispatcher(),
+   ) : TestWatcher() {
+      override fun starting(description: Description) {
+         Dispatchers.setMain(testDispatcher)
+      }
+   }
+   ```
+5. 테스트 실행이 완료되면 테스트 디스패처를 Main 디스패처로 되바꾼다. `finished()` 함수는 지정된 테스트가 끝나면 실행된다.
+   ```kotlin
+   class TestDispatcherRule(
+      val testDispatcher: TestDispatcher = UnconfinedTestDispatcher(),
+   ) : TestWatcher() {
+      override fun starting(description: Description) {
+         Dispatchers.setMain(testDispatcher)
+      }
 
-   
-
+      override fun finished(description: Description) {
+         Dispatchers.resetMain()
+      }
+   }
+   ```
+6. `MarsViewModelTest.kt`로 돌아가서 테스트 클래서 내부에 `TestDispatcherRule` 인스턴스를 생성하고 읽기 전용 변수에 할당한다.
+7. `@get:Rule` 주석을 달아서 테스트에 적용한다.
+   ```kotlin
+   class MarsViewModelTest {
+      @get:Rule
+      val testDispatcher = TestDispatcherRule()
+      ...
+   }   
+   ```
    
 
   
